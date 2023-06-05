@@ -12,6 +12,7 @@
         mode: '0755'
 
     - name: Create repository file
+      become: yes
       template:
         src: myrepo.repo.j2
         dest: "/etc/yum.repos.d/{{ repository_name }}.repo"
