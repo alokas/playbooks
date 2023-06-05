@@ -13,7 +13,7 @@
 
     - name: Create repository file
       template:
-        src: rapiscan.repo.j2
+        src: myrepo.repo.j2
         dest: "/etc/yum.repos.d/{{ repository_name }}.repo"
       notify: Refresh YUM cache
 
