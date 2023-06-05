@@ -6,16 +6,7 @@
       set_fact:
         current_datetime: "{{ ansible_date_time.date }}_{{ ansible_date_time.time }}"
     - name: Fetch facts
-      fetch:
+      copy:
         src: "{{ ansible_facts }}"
         dest: "/opt/statebackup/facts/{{ current_datetime }}_{{ inventory_hostname }}"
-      delegate_to: localhost
-    - name: Fetch software version
-      setup:
-        filter: ansible_facts['ansible_packages']
-      register: software_facts
-    - name: Create software version file
-      copy:
-        content: "{{ software_facts.ansible_facts.ansible_packages | to_nice_json }}"
-        dest: "/opt/statebackup/software/{{ current_datetime }}_{{ inventory_hostname }}.json"
       delegate_to: localhost
