@@ -10,6 +10,13 @@
         path: "/etc/yum.repos.d/"
         state: directory
         mode: '0755'
+    
+    - name: Change permissions on /etc/yum.repos.d/
+      file:
+        path: /etc/yum.repos.d/
+        owner: root
+        group: root
+        mode: '0755'
 
     - name: Create repository file
       become: yes
