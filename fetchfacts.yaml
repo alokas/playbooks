@@ -13,7 +13,7 @@
       register: package_facts_result
 
     - name: Write package versions to file
-      copy:
-        src: {{ package_facts_result.ansible_facts.packages | to_nice_yaml }}
+      template:
+        src: soft_facts.j2
         dest: "/opt/statebackup/software/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
       delegate_to: localhost
