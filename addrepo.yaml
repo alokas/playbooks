@@ -1,6 +1,7 @@
 - name: Add custom YUM repository
   hosts: linux
-  become: yes
+  become: true
+  become_method: sudo
   vars:
     repository_name: rapiscan
     repository_url: "http://10.19.65.10/repos"
