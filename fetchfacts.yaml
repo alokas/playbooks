@@ -2,11 +2,8 @@
   hosts: linux
   gather_facts: true
   tasks:
-    - name: Set current date and time
-      set_fact:
-        current_datetime: "{{ ansible_date_time.date }}_{{ ansible_date_time.time }}"
     - name: Fetch facts
       copy:
         src: "{{ ansible_facts }}"
-        dest: "/opt/statebackup/facts/{{ current_datetime }}_{{ inventory_hostname }}"
+        dest: "/opt/statebackup/facts/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
       delegate_to: localhost
