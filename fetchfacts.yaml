@@ -7,3 +7,13 @@
         src: facts_template.j2
         dest: "/opt/statebackup/facts/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
       delegate_to: localhost
+    - name: Get package facts
+      package_facts:
+        manager: auto
+      register: package_facts_result
+
+    - name: Write package versions to file
+      copy:
+        src: {{ package_facts_result.ansible_facts.packages | to_nice_yaml }}
+        dest: "/opt/statebackup/software/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
