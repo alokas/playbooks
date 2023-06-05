@@ -1,0 +1,22 @@
+- name: Add custom YUM repository
+  hosts: linux
+  become: yes
+  vars:
+    repository_name: rapiscan
+    repository_url: "http://10.19.65.10/repos"
+  tasks:
+    - name: Create repository directory
+      file:
+        path: "/etc/yum.repos.d/"
+        state: directory
+        mode: '0755'
+
+    - name: Create repository file
+      template:
+        src: rapiscan.repo.j2
+        dest: "/etc/yum.repos.d/{{ repository_name }}.repo"
+      notify: Refresh YUM cache
+
+  handlers:
+    - name: Refresh YUM cache
+      command: yum clean all
