@@ -1,0 +1,11 @@
+---
+- name: Install Package
+  hosts: linux
+  become: true
+  vars:
+    package_name: "{{ package_to_install }}"
+  tasks:
+    - name: Install the package
+      yum:
+        name: "{{ package_name }}"
+        state: present
