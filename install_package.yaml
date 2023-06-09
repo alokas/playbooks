@@ -1,6 +1,6 @@
 ---
 - name: Install Packages
-  hosts: your_target_hosts
+  hosts: linux
   become: true
   vars:
     package_names: "{{ package_to_install.split(',') }}"
@@ -12,4 +12,3 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
-        
