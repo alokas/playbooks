@@ -1,11 +1,15 @@
 ---
-- name: Install Package
-  hosts: linux
+- name: Install Packages
+  hosts: your_target_hosts
   become: true
   vars:
-    package_name: "{{ package_to_install }}"
+    package_names: "{{ package_to_install.split(',') }}"
   tasks:
-    - name: Install the package
+    - name: Install the packages
       yum:
-        name: "{{ package_name }}"
+        name: "{{ item }}"
         state: present
+      loop: "{{ package_names }}"
+      loop_control:
+        loop_var: item
+        
