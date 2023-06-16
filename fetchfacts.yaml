@@ -1,5 +1,5 @@
 - name: Fetch facts from remote servers
-  hosts: linux
+  hosts: all
   gather_facts: true
   tasks:
     - name: Fetch facts

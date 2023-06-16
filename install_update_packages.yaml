@@ -1,10 +1,28 @@
-- import_playbook: /opt/playbooks/addrepo.yaml
-- import_playbook: /opt/playbooks/update_local_repo.yml
-- import_playbook: /opt/playbooks/fetchfacts.yaml
-- import_playbook: /opt/playbooks/remove_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
-- import_playbook: /opt/playbooks/install_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
-- import_playbook: /opt/playbooks/remove_packages.yaml run_on=rec{{scanner_no}}
-- import_playbook: /opt/playbooks/install_packages.yaml run_on=rec{{scanner_no}}
+- hosts: localhost
+  tasks:
+    - ansible.builtin.debug:
+        msg: Starting Workflow
+
+- name: Adding Repositories to all Servers
+  ansible.builtin.import_playbook: addrepo.yaml
+
+- name: Refreshing local repository metadata
+  ansible.builtin.import_playbook: update_local_repo.yml
+
+- name: Fetching facts of all servers 
+  ansible.builtin.import_playbook: fetchfacts.yaml
+
+- name: Removing packages from rsi,rre,tds server
+  ansible.builtin.import_playbook: remove_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
+
+- name: Installing packages from rsi,rre,tds server
+  ansible.builtin.import_playbook: install_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
+
+- name: Removing packages from rec server
+  ansible.builtin.import_playbook: remove_packages.yaml run_on=rec{{scanner_no}}
+
+- name: Installing packages from rec server
+  ansible.builtin.import_playbook: install_packages.yaml run_on=rec{{scanner_no}}
 
 
 
