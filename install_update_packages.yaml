@@ -126,11 +126,11 @@
 - name: Install RPM Packages
   hosts: rsi{{ scanner_no }}, tde{{ scanner_no }}
   become: true
-  vars_files:
+  chelseio-rpm:
     - variables/chelsio-rpm.yml
   tasks:
     - name: Install ChelseIO Packages
       yum:
         name: "{{ item }}"
         state: present
-      loop: "{{ rpm_packages }}"
+      loop: "{{ chelseio-rpm }}"
