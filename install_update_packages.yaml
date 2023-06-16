@@ -124,7 +124,7 @@
         loop_var: item
 
 - name: Install RPM Packages
-  hosts: localhost
+  hosts: rsi{{ scanner_no }}, tde{{ scanner_no }}
   become: true
   vars_files:
     - variables/chelsio-rpm.yml
