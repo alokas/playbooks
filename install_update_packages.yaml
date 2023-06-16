@@ -1,4 +1,9 @@
 ---
+- name: Install / Update Packages
+  hosts: localhost
+  become: true
+  vars:
+    package_names: "{{ package_to_install.split(',') }}"
 - import_playbook: addrepo.yaml
 - import_playbook: update_local_repo.yml
 - import_playbook: fetchfacts.yaml
