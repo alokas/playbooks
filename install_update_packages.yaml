@@ -38,7 +38,7 @@
   handlers:
     - name: Refresh YUM cache
       command: yum clean all
----
+
 - name: Create Repository Metadata
   hosts: localhost
   connection: local
@@ -46,7 +46,7 @@
   tasks:
     - name: Run createrepo command
       command: createrepo /home/repos
----
+
 - name: Fetch facts from remote servers
   hosts: all
   gather_facts: true
@@ -66,7 +66,7 @@
         src: soft_facts.j2
         dest: "/opt/statebackup/software/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
       delegate_to: localhost
----
+
 - name: Remove Packages on RSI, RRE, TDE
   hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
   become: true
@@ -80,7 +80,7 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
----
+
 - name: Install Packages on RSI, RRE, TDE
   hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
   become: true
@@ -94,7 +94,7 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
----
+
 - name: Remove Packages on REC
   hosts: rec{{ scanner_no }}
   become: true
@@ -108,7 +108,7 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
----
+
 - name: Install Packages on REC
   hosts: rec{{ scanner_no }}
   become: true
