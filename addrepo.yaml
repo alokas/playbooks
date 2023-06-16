@@ -1,5 +1,5 @@
 ---
-- name: Remove YUM Repositories except created
+- name: Manage Local YUM Repositories 
   hosts: all
   become: true
   vars:
@@ -11,7 +11,7 @@
       register: repo_list
       changed_when: false
       failed_when: false
-    - name: Remove repositories except one
+    - name: Remove repositories except local
       become: true
       command: rm -f /etc/yum.repos.d/{{ item }}
       with_items: "{{ repo_list.stdout_lines }}"

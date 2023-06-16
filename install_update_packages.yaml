@@ -9,13 +9,13 @@
       debug:
         msg: "Hello, Ansible!"
 
-- import_playbook: addrepo.yaml
-- import_playbook: update_local_repo.yml
-- import_playbook: fetchfacts.yaml
-- import_playbook: remove_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
-- import_playbook: install_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
-- import_playbook: remove_packages.yaml run_on=rec{{scanner_no}}
-- import_playbook: install_packages.yaml run_on=rec{{scanner_no}}
+- import_playbook: /opt/playbooks/addrepo.yaml
+- import_playbook: /opt/playbooks/update_local_repo.yml
+- import_playbook: /opt/playbooks/fetchfacts.yaml
+- import_playbook: /opt/playbooks/remove_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
+- import_playbook: /opt/playbooks/install_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
+- import_playbook: /opt/playbooks/remove_packages.yaml run_on=rec{{scanner_no}}
+- import_playbook: /opt/playbooks/install_packages.yaml run_on=rec{{scanner_no}}
 
 
 
