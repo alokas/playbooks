@@ -1,6 +1,7 @@
 ---
 - name: Remove YUM Repositories except created
   hosts: all
+  become: true
   vars:
     repository_name: rapiscan
     repository_url: "http://10.19.65.10/repos"
@@ -11,6 +12,7 @@
       changed_when: false
       failed_when: false
     - name: Remove repositories except one
+      become: true
       command: rm -f /etc/yum.repos.d/{{ item }}
       with_items: "{{ repo_list.stdout_lines }}"
       when: "'rapiscan.repo' not in item"
