@@ -1,0 +1,14 @@
+---
+- import_playbook: addrepo.yaml
+- import_playbook: fetchfacts.yaml
+- import_playbook: remove_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
+- import_playbook: install_packages.yaml run_on=rsi{{scanner_no}},rre{{scanner_no}},tde{{scanner_no}}
+- import_playbook: remove_packages.yaml run_on=rec{{scanner_no}}
+- import_playbook: install_packages.yaml run_on=rec{{scanner_no}}
+
+
+
+
+
+
+

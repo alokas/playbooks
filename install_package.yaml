@@ -1,6 +1,6 @@
 ---
 - name: Install Packages
-  hosts: linux
+  hosts: "{{ run_on }}"
   become: true
   vars:
     package_names: "{{ package_to_install.split(',') }}"
