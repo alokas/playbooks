@@ -39,6 +39,14 @@
     - name: Refresh YUM cache
       command: yum clean all
 ---
+- name: Create Repository Metadata
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Run createrepo command
+      command: createrepo /home/repos
+---
 - name: Fetch facts from remote servers
   hosts: all
   gather_facts: true
