@@ -4,6 +4,11 @@
   become: true
   vars:
     package_names: "{{ package_to_install.split(',') }}"
+  tasks:
+    - name: Print a message
+      debug:
+        msg: "Hello, Ansible!"
+
 - import_playbook: addrepo.yaml
 - import_playbook: update_local_repo.yml
 - import_playbook: fetchfacts.yaml
