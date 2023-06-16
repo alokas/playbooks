@@ -126,11 +126,39 @@
 - name: Install RPM Packages
   hosts: rsi{{ scanner_no }}, tde{{ scanner_no }}
   become: true
-  vars_files:
-    - variables/chelsio-rpm.yml
+  vars:
+    chelsio_packages:
+      - bonding
+      - chelsio-nvmeutils
+      - chelsio-series4-firmware
+      - chelsio-utils
+      - chiwarp
+      - csiostor-initiator
+      - cxgb4
+      - cxgb4i
+      - cxgb4toe
+      - cxgb4vf
+      - cxgbit
+      - ibacm
+      - libcxgb4
+      - libcxgb4-devel
+      - libcxgb4_sock
+      - libcxgb4_sock_debug
+      - libcxgb4_udp
+      - libcxgb4_udp_debug
+      - libibcm
+      - libibumad
+      - libibverbs
+      - libibverbs-utils
+      - librdmacm
+      - librdmacm-utils
+      - rdma-core
+      - rdma-core-devel
+      - sniffer
   tasks:
     - name: Install ChelseIO Packages
       yum:
         name: "{{ item }}"
         state: present
       loop: "{{ chelsio_packages }}"
+      when: install_chelsio_rpms | default(false) | bool
