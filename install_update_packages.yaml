@@ -122,3 +122,15 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
+
+- name: Install RPM Packages
+  hosts: localhost
+  become: true
+  vars_files:
+    - variables/chelsio-rpm.yml
+  tasks:
+    - name: Install ChelseIO Packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ rpm_packages }}"
