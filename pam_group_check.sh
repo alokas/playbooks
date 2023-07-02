@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-log_file="/var/log/messages"
+log_file="/var/log/adgroupcheck"
 
 # Function to log messages
 log_message() {
