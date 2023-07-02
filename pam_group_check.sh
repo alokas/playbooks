@@ -4,6 +4,7 @@
 cat /etc/passwd | grep $PAM_USER
 if [ $? -eq 0 ]; then
     # User is in the password file, exit with a 0 exit code to signify success
+    echo "$PAM_USER : Access Granted as local user"
     exit 0
 fi
 
@@ -20,7 +21,9 @@ fi
 
 if [ $? -eq 0 ]; then
     # Group exists
+    echo "$PAM_USER : Access Granted as in AD Group $groupname"
     exit 0
 else
+    echo "$PAM_USER : Access DENIED as NOT in AD Group $groupname"
     exit 1
 fi
