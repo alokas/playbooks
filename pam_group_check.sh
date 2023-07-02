@@ -1,10 +1,20 @@
 #!/bin/bash
 
+
+log_file="/var/log/messages"
+
+# Function to log messages
+log_message() {
+    local timestamp
+    timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    echo "[$timestamp] $1" >> "$log_file"
+}
+
 # Step 1: Check if the username is in the /etc/passwd file
 cat /etc/passwd | grep $PAM_USER
 if [ $? -eq 0 ]; then
     # User is in the password file, exit with a 0 exit code to signify success
-    echo "$PAM_USER : Access Granted as local user"
+    log_message "$PAM_USER : Access Granted as local user"
     exit 0
 fi
 
@@ -21,9 +31,9 @@ fi
 
 if [ $? -eq 0 ]; then
     # Group exists
-    echo "$PAM_USER : Access Granted as in AD Group $groupname"
+    log_message "$PAM_USER : Access Granted as in AD Group $groupname"
     exit 0
 else
-    echo "$PAM_USER : Access DENIED as NOT in AD Group $groupname"
+    log_message "$PAM_USER : Access DENIED as NOT in AD Group $groupname"
     exit 1
 fi
