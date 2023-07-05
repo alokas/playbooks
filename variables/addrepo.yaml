@@ -1,0 +1,40 @@
+---
+- name: Manage Local YUM Repositories 
+  hosts: all
+  become: true
+  vars:
+    repository_name: rapiscan
+    repository_url: "http://10.19.65.10/repos"
+  tasks:
+    - name: List repositories
+      command: ls /etc/yum.repos.d/*.repo
+      register: repo_list
+      changed_when: false
+      failed_when: false
+    - name: Remove repositories except local
+      become: true
+      command: rm -f /etc/yum.repos.d/{{ item }}
+      with_items: "{{ repo_list.stdout_lines }}"
+      when: "'rapiscan.repo' not in item"
+      
+    - name: Create Repository directory
+      file:
+        path: "/etc/yum.repos.d/"
+        state: directory
+        mode: '0755'
+    - name: Change Permissions on /etc/yum.repos.d/
+      file:
+        path: /etc/yum.repos.d/
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Create repository file
+      become: yes
+      template:
+        src: myrepo.repo.j2
+        dest: "/etc/yum.repos.d/{{ repository_name }}.repo"
+      notify: Refresh YUM cache
+  
+  handlers:
+    - name: Refresh YUM cache
+      command: yum clean all

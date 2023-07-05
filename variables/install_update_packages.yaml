@@ -1,0 +1,164 @@
+---
+- name: Manage Local YUM Repositories 
+  hosts: all
+  become: true
+  vars:
+    repository_name: rapiscan
+    repository_url: "http://10.19.65.10/repos"
+  tasks:
+    - name: List repositories
+      command: ls /etc/yum.repos.d/*.repo
+      register: repo_list
+      changed_when: false
+      failed_when: false
+    - name: Remove repositories except local
+      become: true
+      command: rm -f /etc/yum.repos.d/{{ item }}
+      with_items: "{{ repo_list.stdout_lines }}"
+      when: "'rapiscan.repo' not in item"
+      
+    - name: Create Repository directory
+      file:
+        path: "/etc/yum.repos.d/"
+        state: directory
+        mode: '0755'
+    - name: Change Permissions on /etc/yum.repos.d/
+      file:
+        path: /etc/yum.repos.d/
+        owner: root
+        group: root
+        mode: '0755'
+    - name: Create repository file
+      become: yes
+      template:
+        src: myrepo.repo.j2
+        dest: "/etc/yum.repos.d/{{ repository_name }}.repo"
+      notify: Refresh YUM cache
+  
+  handlers:
+    - name: Refresh YUM cache
+      command: yum clean all
+
+- name: Create Repository Metadata
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Run createrepo command
+      command: createrepo /home/repos
+
+- name: Fetch facts from remote servers
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Fetch facts
+      template:
+        src: facts_template.j2
+        dest: "/opt/statebackup/facts/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+    - name: Get package facts
+      package_facts:
+        manager: auto
+      register: package_facts_result
+
+    - name: Write package versions to file
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+
+- name: Remove Packages on RSI, RRE, TDE
+  hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
+  become: true
+  vars:
+    package_names: "{{ package_to_install.split(',') }}"
+  tasks:
+    - name: Remove the packages
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ package_names }}"
+      loop_control:
+        loop_var: item
+
+- name: Install Packages on RSI, RRE, TDE
+  hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
+  become: true
+  vars:
+    package_names: "{{ package_to_install.split(',') }}"
+  tasks:
+    - name: Install the packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ package_names }}"
+      loop_control:
+        loop_var: item
+
+- name: Remove Packages on REC
+  hosts: rec{{ scanner_no }}
+  become: true
+  vars:
+    package_names: "{{ package_to_install.split(',') }}"
+  tasks:
+    - name: Remove the packages
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ package_names }}"
+      loop_control:
+        loop_var: item
+
+- name: Install Packages on REC
+  hosts: rec{{ scanner_no }}
+  become: true
+  vars:
+    package_names: "{{ package_to_install.split(',') }}"
+  tasks:
+    - name: Install the packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ package_names }}"
+      loop_control:
+        loop_var: item
+
+- name: Install RPM Packages
+  hosts: rsi{{ scanner_no }}, tde{{ scanner_no }}
+  become: true
+  vars:
+    chelsio_packages:
+      - bonding
+      - chelsio-nvmeutils
+      - chelsio-series4-firmware
+      - chelsio-utils
+      - chiwarp
+      - csiostor-initiator
+      - cxgb4
+      - cxgb4i
+      - cxgb4toe
+      - cxgb4vf
+      - cxgbit
+      - ibacm
+      - libcxgb4
+      - libcxgb4-devel
+      - libcxgb4_sock
+      - libcxgb4_sock_debug
+      - libcxgb4_udp
+      - libcxgb4_udp_debug
+      - libibcm
+      - libibumad
+      - libibverbs
+      - libibverbs-utils
+      - librdmacm
+      - librdmacm-utils
+      - rdma-core
+      - rdma-core-devel
+      - sniffer
+  tasks:
+    - name: Install ChelseIO Packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ chelsio_packages }}"
+      when: install_chelsio_rpms | default(false) | bool
