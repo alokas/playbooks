@@ -1,6 +1,6 @@
 ---
 - name: Install NVIDIA Driver
-  hosts: all
+  hosts: "{{ scanner }}"
   become: true
   become_user: root
 
@@ -32,7 +32,6 @@
             msg: "Kernel release {{ ansible_kernel }} not supported. Supported releases: {{ kernel_releases }}"
           when: ansible_kernel not in kernel_releases
 
-
     - name: Install required packages
       yum:
         name:
@@ -41,6 +40,7 @@
           - kernel-headers
           - make
         state: present
+      delegate_to: "{{ groups[group_name][0] }}"
 
     - name: Set execute permissions on the script
       delegate_to: localhost
