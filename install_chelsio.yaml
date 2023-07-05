@@ -1,0 +1,88 @@
+---
+- name: Install Chelsio RPMs
+  hosts: all
+  become: yes
+  vars:
+    major_version: 1
+    minor_version: 0
+    tick_version: 3
+    logfile: "/var/rtt/log/test.{{ ansible_date_time.date }}.log"
+    kernel_releases:
+      - 3.10.0-1160.76.1.el7.x86_64
+    centos_releases:
+      - 7-9.2009.1.el7.centos-x86_64
+    rpms_installing: CHELSIO_316
+    rpms_to_install:
+      - libcxgb4-3.16.0.1-0.x86_64.rpm
+      # Add the remaining RPMs here
+
+  tasks:
+    - name: Create rtt user
+      user:
+        name: rtt
+        state: present
+
+    - name: Create log directory if it doesn't exist
+      file:
+        path: /var/rtt/log
+        state: directory
+        owner: rtt
+        group: rtt
+        mode: '0755'
+
+    - name: Initialize log file
+      delegate_to: localhost
+      copy:
+        content: ""
+        dest: "/var/rtt/log/test.{{ ansible_date_time.date }}.log"
+        owner: rtt
+        group: rtt
+        mode: 0644
+
+    - name: Append date to log file
+      delegate_to: localhost
+      lineinfile:
+        path: "/var/rtt/log/test.{{ ansible_date_time.date }}.log"
+        line: "{{ ansible_date_time.iso8601 }}"
+        insertafter: EOF
+
+    - name: Check if the system is running a valid kernel and CentOS version
+      block:
+        - name: Get kernel release
+          command: uname -r
+          register: kernel_release
+
+        - name: Get CentOS release
+          command: rpm -q --qf "%{VERSION}-%{RELEASE}-%{ARCH}" centos-release
+          register: centos_release
+
+
+    - name: Install required RPMs
+      block:
+        - name: Create logfile entry for RPM installation start
+          delegate_to: localhost
+          lineinfile:
+            path: "{{ logfile }}"
+            line: "Starting installation of chelsio RPMS on host {{ ansible_hostname }}"
+            insertafter: EOF
+
+        - name: Install RPMs
+          yum:
+            state: present
+          vars:
+            packages: "{{ lookup('file', '/opt/playbooks/rpm_lists/chelsio_rpm.txt').splitlines() }}" 
+
+        - name: Fail if RPM installation fails
+          fail:
+            msg: "RPM installation failed. See the logfile for more details."
+          when: rpm_install_result.failed
+
+        - name: Move shared object file
+          shell: mv -v /usr/lib64/libibverbs/libcxgb4-rdmav22.so /usr/lib64/libibverbs/libcxgb4-rdmav22.so.hidden
+          args:
+            creates: /usr/lib64/libibverbs/libcxgb4-rdmav22.so.hidden
+          register: move_so_result
+
+        - name: Fail if shared object file move fails
+          fail:
+            msg: "Failed to move shared object file. See the logfile for more details."
