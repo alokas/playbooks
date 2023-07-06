@@ -1,7 +1,12 @@
 ---
 - name: Handling rsi,rre,tde first
   hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
+  gather_facts: true
   become: true
+  vars:
+    default_package_file: "/home/repos/packages/packages.txt"
+    package_file: "{{ package_path | default(default_package_file) }}"
+
   tasks:
     - name: Backup Packager State before Change
       package_facts:
@@ -19,7 +24,7 @@
     - name: Read package names from the file
       delegate_to: localhost
       set_fact:
-        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
+        package_names: "{{ lookup('file', package_file).splitlines() }}"
 
     - name: Remove the packages
       become: true
@@ -30,15 +35,6 @@
       loop_control:
         loop_var: item
 
-- name: Handling rsi,rre,tde first
-  hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
-  become: true
-  tasks:
-
-    - name: Read package names from the file
-      delegate_to: localhost
-      set_fact:
-        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
 
     - name: Install the packages
       become: true
@@ -65,7 +61,12 @@
 
 - name: Handling rec server at the end
   hosts: rec{{ scanner_no }}
+  gather_facts: true
   become: true
+  vars:
+    default_package_file: "/home/repos/packages/packages.txt"
+    package_file: "{{ package_path | default(default_package_file) }}"
+
   tasks:
     - name: Backup Packager State before Change
       package_facts:
@@ -83,7 +84,7 @@
     - name: Read package names from the file
       delegate_to: localhost
       set_fact:
-        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
+        package_names: "{{ lookup('file', package_file).splitlines() }}"
 
     - name: Remove the packages
       become: true
@@ -94,14 +95,6 @@
       loop_control:
         loop_var: item
 
-- name: Handling rec server at the end
-  hosts: rec{{ scanner_no }}
-  become: true
-  tasks:
-    - name: Read package names from the file
-      delegate_to: localhost
-      set_fact:
-        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
 
     - name: Install the packages
       become: true
