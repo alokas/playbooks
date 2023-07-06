@@ -1,6 +1,5 @@
----
 - name: Install Chelsio RPMs
-  hosts: all
+  hosts: "{{ scanner }}"
   become: yes
   vars:
     major_version: 1
@@ -12,9 +11,6 @@
     centos_releases:
       - 7-9.2009.1.el7.centos-x86_64
     rpms_installing: CHELSIO_316
-    rpms_to_install:
-      - libcxgb4-3.16.0.1-0.x86_64.rpm
-      # Add the remaining RPMs here
 
   tasks:
     - name: Create rtt user
@@ -31,58 +27,41 @@
         mode: '0755'
 
     - name: Initialize log file
-      delegate_to: localhost
+      delegate_to: "{{ groups[group_name][0] }}"
       copy:
         content: ""
-        dest: "/var/rtt/log/test.{{ ansible_date_time.date }}.log"
+        dest: "{{ logfile }}"
         owner: rtt
         group: rtt
-        mode: 0644
+        mode: '0644'
 
     - name: Append date to log file
-      delegate_to: localhost
       lineinfile:
-        path: "/var/rtt/log/test.{{ ansible_date_time.date }}.log"
+        path: "{{ logfile }}"
         line: "{{ ansible_date_time.iso8601 }}"
         insertafter: EOF
 
-    - name: Check if the system is running a valid kernel and CentOS version
-      block:
-        - name: Get kernel release
-          command: uname -r
-          register: kernel_release
+    - name: Read RPM file contents
+      delegate_to: localhost
+      set_fact:
+        rpm_file: "{{ lookup('file', '/opt/playbooks/rpm_lists/chelsio_rpm.txt') | replace('\r\n', ' ') | replace('\r', ' ') | replace('\n', ' ') }}"
 
-        - name: Get CentOS release
-          command: rpm -q --qf "%{VERSION}-%{RELEASE}-%{ARCH}" centos-release
-          register: centos_release
+    - name: Print the value of the fact
+      debug:
+        var: rpm_file
 
+    - name: Install the required packages
+      delegate_to: "{{ groups[group_name][0] }}"
+      yum:
+        name: "{{ rpm_file.split() }}"
+        state: present
+      when: rpm_file is defined and rpm_file | length > 0
 
-    - name: Install required RPMs
-      block:
-        - name: Create logfile entry for RPM installation start
-          delegate_to: localhost
-          lineinfile:
-            path: "{{ logfile }}"
-            line: "Starting installation of chelsio RPMS on host {{ ansible_hostname }}"
-            insertafter: EOF
+    - name: Fail if RPM installation fails
+      fail:
+        msg: "RPM installation failed. See the logfile for more details."
+      when: scanner is defined and group_name is defined and group_name in groups[scanner] and rpm_install_result.failed
 
-        - name: Install RPMs
-          yum:
-            state: present
-          vars:
-            packages: "{{ lookup('file', '/opt/playbooks/rpm_lists/chelsio_rpm.txt').splitlines() }}" 
+    - name: Move shared object file
+      shell: mv -v /usr/lib64/libibverbs/libcxgb4-rdmav22.so /usr/lib64/libibverbs/libcxgb4-rdmav22.so.hidden
 
-        - name: Fail if RPM installation fails
-          fail:
-            msg: "RPM installation failed. See the logfile for more details."
-          when: rpm_install_result.failed
-
-        - name: Move shared object file
-          shell: mv -v /usr/lib64/libibverbs/libcxgb4-rdmav22.so /usr/lib64/libibverbs/libcxgb4-rdmav22.so.hidden
-          args:
-            creates: /usr/lib64/libibverbs/libcxgb4-rdmav22.so.hidden
-          register: move_so_result
-
-        - name: Fail if shared object file move fails
-          fail:
-            msg: "Failed to move shared object file. See the logfile for more details."

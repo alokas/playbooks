@@ -1,8 +1,7 @@
 ---
 - name: Install NVIDIA Driver
-  hosts: "{{ scanner }}"
+  hosts: rre{{ scanner_number }}
   become: true
-  become_user: root
 
   vars:
     major_version: 1
@@ -10,10 +9,6 @@
     tick_version: 4
     log_directory: /var/rtt/log
     logfile: "{{ log_directory }}/{{ inventory_hostname }}.{{ ansible_date_time.date }}.log"
-    kernel_releases:
-      - 3.10.0-1160.76.1.el7.x86_64
-    centos_releases:
-      - 7.9
     rpms_installing: NVIDIA-440.44
 
   tasks:
@@ -25,13 +20,10 @@
         owner: rtt
         group: rtt
 
-    - name: Check OS and kernel release
-      block:
-        - name: Check kernel release
-          fail:
-            msg: "Kernel release {{ ansible_kernel }} not supported. Supported releases: {{ kernel_releases }}"
-          when: ansible_kernel not in kernel_releases
-
+- name: Install required packages and NVIDIA driver
+  hosts: rre{{ scanner_number }}
+  become: true
+  tasks:
     - name: Install required packages
       yum:
         name:
@@ -40,7 +32,6 @@
           - kernel-headers
           - make
         state: present
-      delegate_to: "{{ groups[group_name][0] }}"
 
     - name: Set execute permissions on the script
       delegate_to: localhost
@@ -49,9 +40,7 @@
         mode: '0755'
 
     - name: Install NVIDIA Driver
-      delegate_to: localhost
       become: true
-      become_user: root
       command: "/opt/playbooks/NVIDIA-Linux-x86_64-440.44-no-compat32.run --no-opengl-files --no-questions --ui=none --accept-license"
       args:
         chdir: "/tmp"
@@ -60,5 +49,4 @@
       command: "reboot"
       async: 0
       poll: 0
-      when: ansible_distribution_major_version == "7"
 
