@@ -4,7 +4,7 @@
   gather_facts: true
   become: true
   vars:
-    default_package_file: "/home/repos/packages/packages.txt"
+    default_package_file: "/opt/playbooks/rpm_packages/packages.txt"
     package_file: "{{ package_path | default(default_package_file) }}"
 
   tasks:
