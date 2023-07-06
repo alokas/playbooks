@@ -103,7 +103,7 @@
           yum:
             state: present
             name: "{{ item }}"
-          loop: "{{ lookup('file', '/home/repos/packages/chelsio_rpm.txt').splitlines() }}" 
+          loop: "{{ lookup('file', '/opt/playbooks/rpm_packages/chelsio_rpm.txt').splitlines() }}" 
 
         - name: Backup Packager State after Change
           package_facts:
