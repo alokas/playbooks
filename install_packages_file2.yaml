@@ -1,17 +1,26 @@
 ---
-- name: Deploy packages to scanners
-  hosts: scanner{{ scanner_number }}
-  gather_facts: false
+- name: Removing the package after reading from file
+  hosts: "{{ group_name }}"
+  gather_facts: true
 
   tasks:
-    - name: Filter hosts by group name
-      set_fact:
-        filtered_hosts: "{{ groups[group_name] if group_name != 'all' else groups.all }}"
+    - name: Backup Packager State before Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+    - name: Backup Packager State before Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/deploy_pkg_single_grp_before_using_file{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
 
     - name: Read package names from the file
       delegate_to: localhost
       set_fact:
-        package_names: "{{ lookup('file', '/opt/playbooks/rpm_lists/packages.txt').splitlines() }}"
+        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
 
     - name: Remove the packages
       become: true
@@ -21,8 +30,20 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
-      when: inventory_hostname in filtered_hosts
 
+
+
+- name: Installing the package after reading from file
+  hosts: "{{ group_name }}"
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Read package names from the file
+      delegate_to: localhost
+      set_fact:
+        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
     - name: Install the  packages
       become: true
       yum:
@@ -31,4 +52,17 @@
       loop: "{{ package_names }}"
       loop_control:
         loop_var: item
-      when: inventory_hostname in filtered_hosts
+
+    - name: Backup Packager State after Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+
+    - name: Backup Packager State after Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/deploy_pkg_single_grp_after_using_file{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true

@@ -1,5 +1,4 @@
 ---
-
 - name: Handling rsi,rre,tde first
   hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
   become: true
@@ -17,11 +16,17 @@
       delegate_to: localhost
       ignore_errors: true
 
+    - name: Read package names from the file
+      delegate_to: localhost
+      set_fact:
+        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
+
     - name: Remove the packages
+      become: true
       yum:
         name: "{{ item }}"
         state: absent
-      loop: "{{ package_to_install.split(',') }}"
+      loop: "{{ package_names }}"
       loop_control:
         loop_var: item
 
@@ -29,11 +34,18 @@
   hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
   become: true
   tasks:
+
+    - name: Read package names from the file
+      delegate_to: localhost
+      set_fact:
+        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
+
     - name: Install the packages
+      become: true
       yum:
         name: "{{ item }}"
         state: present
-      loop: "{{ package_to_install.split(',') }}"
+      loop: "{{ package_names }}"
       loop_control:
         loop_var: item
 
@@ -64,15 +76,21 @@
     - name: Backup Packager State before Change (Step 2)
       template:
         src: soft_facts.j2
-        dest: "/opt/statebackup/software/upgrade_scanner_before_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+        dest: "/opt/statebackup/software/upgrade_scanner_before_using_pkg_file{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
       delegate_to: localhost
       ignore_errors: true
 
+    - name: Read package names from the file
+      delegate_to: localhost
+      set_fact:
+        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
+
     - name: Remove the packages
+      become: true
       yum:
         name: "{{ item }}"
         state: absent
-      loop: "{{ package_to_install.split(',') }}"
+      loop: "{{ package_names }}"
       loop_control:
         loop_var: item
 
@@ -80,14 +98,20 @@
   hosts: rec{{ scanner_no }}
   become: true
   tasks:
+    - name: Read package names from the file
+      delegate_to: localhost
+      set_fact:
+        package_names: "{{ lookup('file', '/home/repos/packages/packages.txt').splitlines() }}"
+
     - name: Install the packages
+      become: true
       yum:
         name: "{{ item }}"
         state: present
-      loop: "{{ package_to_install.split(',') }}"
+      loop: "{{ package_names }}"
       loop_control:
-        loop_var: item
-
+        loop_var: item 
+     
     - name: Backup Packager State after Change
       package_facts:
         manager: auto
@@ -97,6 +121,6 @@
     - name: Backup Packager State after Change (Step 2)
       template:
         src: soft_facts.j2
-        dest: "/opt/statebackup/software/upgrade_scanner_after{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+        dest: "/opt/statebackup/software/upgrade_scanner_after_using_pkg_file{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
       delegate_to: localhost
       ignore_errors: true

@@ -1,17 +1,24 @@
 ---
-- name: Deploy packages to scanners
-  hosts: scanner{{ scanner_number }}
-  gather_facts: false
+- name: Deploy packages to groups
+  hosts: "{{ group_name }}"
+  gather_facts: true
 
 
   tasks:
-    - name: Filter hosts by group name
-      set_fact:
-        filtered_hosts: "{{ groups[group_name] if group_name != 'all' else groups.all }}"
+    - name: Backup Packager State before Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
 
-    - name: Print filtered hosts
-      debug:
-        var: filtered_hosts
+    - name: Backup Packager State before Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/deploy_pkg_single_grp_before_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
+
+
 
     - name: Remove the packages
       become: true
@@ -21,7 +28,6 @@
       loop: "{{ package_names.split(',') }}"
       loop_control:
         loop_var: item
-      when: inventory_hostname in filtered_hosts
 
     - name: Install the packages
       become: true
@@ -31,4 +37,18 @@
       loop: "{{ package_names.split(',') }}"
       loop_control:
         loop_var: item
-      when: inventory_hostname in filtered_hosts
+
+    - name: Backup Packager State after Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+
+    - name: Backup Packager State after Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/deploy_pkg_single_grp_after_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
+
