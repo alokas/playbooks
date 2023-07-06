@@ -1,0 +1,102 @@
+---
+
+- name: Handling rsi,rre,tde first
+  hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
+  become: true
+  tasks:
+    - name: Backup Packager State before Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+    - name: Backup Packager State before Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/upgrade_scanner_before_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
+
+    - name: Remove the packages
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ package_to_install.split(',') }}"
+      loop_control:
+        loop_var: item
+
+- name: Handling rsi,rre,tde first
+  hosts: rsi{{ scanner_no }},rre{{ scanner_no }},tde{{ scanner_no }}
+  become: true
+  tasks:
+    - name: Install the packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ package_to_install.split(',') }}"
+      loop_control:
+        loop_var: item
+
+    - name: Backup Packager State after Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+    - name: Backup Packager State after Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/upgrade_scanner_after{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
+
+
+- name: Handling rec server at the end
+  hosts: rec{{ scanner_no }}
+  become: true
+  tasks:
+    - name: Backup Packager State before Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+    - name: Backup Packager State before Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/upgrade_scanner_before_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
+
+    - name: Remove the packages
+      yum:
+        name: "{{ item }}"
+        state: absent
+      loop: "{{ package_to_install.split(',') }}"
+      loop_control:
+        loop_var: item
+
+- name: Handling rec server at the end
+  hosts: rec{{ scanner_no }}
+  become: true
+  tasks:
+    - name: Install the packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ package_to_install.split(',') }}"
+      loop_control:
+        loop_var: item
+
+    - name: Backup Packager State after Change
+      package_facts:
+        manager: auto
+      register: package_facts_result
+      ignore_errors: true
+
+    - name: Backup Packager State after Change (Step 2)
+      template:
+        src: soft_facts.j2
+        dest: "/opt/statebackup/software/upgrade_scanner_after{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+      delegate_to: localhost
+      ignore_errors: true
