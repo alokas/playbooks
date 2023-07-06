@@ -1,9 +1,0 @@
-git
-httpd
-mysql-server
-php
-python3
-vim
-wget
-unzip
-nmap
