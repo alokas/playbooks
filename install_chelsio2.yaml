@@ -1,0 +1,155 @@
+- hosts: rsi{{ scanner_no }}, tde{{ scanner_no }}, rre{{ scanner_no }}
+  become: true
+  vars:
+    major_version: 1
+    minor_version: 0
+    tick_version: 3
+    debug: 1
+    dont_installrpms: 0
+    logfile: "/var/rtt/log/{{ ansible_date_time.date }}.log"
+    kernel_releases: "3.10.0-1160.76.1.el7.x86_64"
+    centos_releases: "7-9.2009.1.el7.centos-x86_64"
+    rpms_installing: "CHELSIO_316"
+    chelsiorpmlist: "bonding\nchelsio-nvmeutils\nchelsio-series4-firmware\nchelsio-utils\nchiwarp\ncsiostor-initiator\ncxgb4\ncxgb4i\ncxgb4toe\ncxgb4vf\ncxgbit\nibacm\nlibcxgb4\nlibcxgb4-devel\nlibcxgb4_sock\nlibcxgb4_sock_debug\nlibcxgb4_udp\nlibcxgb4_udp_debug\nlibibcm\nlibibumad\nlibibverbs\nlibibverbs-utils\nlibrdmacm\nlibrdmacm-utils\nrdma-core\nrdma-core-devel\nsniffer"
+    chelsiorpmlist_lines: "{{ chelsiorpmlist.splitlines() }}"
+
+  tasks:
+    - name: Create log directory
+      file:
+        path: "/var/rtt/log"
+        state: directory
+        owner: rtt
+        group: rtt
+
+    - name: Initialize logfile
+      copy:
+        dest: "{{ logfile }}"
+        content: "Starting . . .\n"
+      become_user: rtt
+
+    - name: Set logfile owner
+      file:
+        path: "{{ logfile }}"
+        owner: rtt
+        group: rtt
+
+    - name: Check root user
+      block:
+        - name: Get current user
+          command: whoami
+          register: current_user
+
+        - name: Verify root user
+          fail:
+            msg: "Must be root to run."
+          when: current_user.stdout != "root"
+
+    - name: Check if the system is running a valid kernel and CentOS version
+      block:
+        - name: Get kernel release
+          command: uname -r
+          register: kernel_release
+
+        - name: Print kernel release
+          debug:
+            var: kernel_release.stdout
+
+        - name: Get CentOS release
+          command: rpm -q --qf "%{VERSION}-%{RELEASE}-%{ARCH}" centos-release
+          register: centos_release
+
+        - name: Print CentOS release
+          debug:
+            var: centos_release.stdout
+
+        - name: Verify kernel release
+          assert:
+            that: kernel_release.stdout in kernel_releases
+            fail_msg: "Invalid kernel release detected: {{ kernel_release.stdout }}"
+
+        - name: Verify CentOS release
+          assert:
+            that: centos_release.stdout in centos_releases
+            fail_msg: "Invalid CentOS release detected: {{ centos_release.stdout }}"
+
+    - name: Install required RPMs
+      block:
+        - name: Create logfile entry for RPM installation start
+          lineinfile:
+            path: "{{ logfile }}"
+            line: "Starting installation of chelsio RPMS on host {{ ansible_hostname }}"
+            insertafter: EOF
+
+        - name: Backup Packager State before Change
+          package_facts:
+            manager: auto
+          register: package_facts_result
+          ignore_errors: true
+
+        - name: Backup Packager State before Change (Step 2)
+          template:
+            src: soft_facts.j2
+            dest: "/opt/statebackup/software/install_chelsio_pkg_before_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+          delegate_to: localhost
+          ignore_errors: true
+
+        - name: Install RPMs
+          yum:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ lookup('file', '/opt/playbooks/rpm_packages/chelsio_rpm.txt').splitlines() }}"
+          ignore_errors: true
+
+        - name: Backup Packager State after Change
+          package_facts:
+            manager: auto
+          register: package_facts_result
+          ignore_errors: true
+
+        - name: Backup Packager State after Change (Step 2)
+          template:
+            src: soft_facts.j2
+            dest: "/opt/statebackup/software/install_chelsio_pkg_after_{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_{{ inventory_hostname }}"
+          delegate_to: localhost
+          ignore_errors: true
+
+    - name: Check if chelsio RPMS are installed
+      block:
+        - name: Get list of installed chelsio RPMS
+          yum:
+            list: "{{ chelsiorpmlist_lines }}"
+          register: chelsio_rpms_installed
+          ignore_errors: true
+
+        - name: Print chelsio RPMS that are installed
+          debug:
+            var: chelsio_rpms_installed
+          ignore_errors: true
+
+        - name: Uninstall chelsio RPMS
+          yum:
+            name: "{{ item }}"
+            state: absent
+          loop: "{{ chelsiorpmlist_lines }}"
+          changed_when: false
+
+        - name: Install chelsio RPMS
+          yum:
+            name: "{{ item }}"
+            state: present
+          loop: "{{ chelsiorpmlist_lines }}"
+          ignore_errors: true
+
+        - name: Reinstall libcxgb4 shared objects
+          yum:
+            name: libcxgb4
+            state: present
+          changed_when: false
+          ignore_errors: true
+
+        - name: Move shared object installed by libibverbs
+          command: mv -v /usr/lib64/libibverbs/libcxgb4-rdmav22.so /usr/lib64/libibverbs/libcxgb4-rdmav22.so.hidden
+          changed_when: false
+          ignore_errors: true
+
+
